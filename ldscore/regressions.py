@@ -217,7 +217,7 @@ class LD_Score_Regression(object):
             self._cat(jknife, M, Nbar, self.coef, self.coef_cov)
 
         self.tot, self.tot_cov, self.tot_se = self._tot(self.cat, self.cat_cov)
-        self.prop, self.prop_cov, self.prop_se =\
+        self.prop, self.prop_cov, self.prop_se, self.prop_pseudovalues =\
             self._prop(jknife, M, Nbar, self.cat, self.tot)
 
         self.enrichment, self.M_prop = self._enrichment(
@@ -293,7 +293,7 @@ class LD_Score_Regression(object):
         denom_delete_vals = np.dot(denom_delete_vals, np.ones((1, n_annot)))
         prop = jk.RatioJackknife(
             cat / tot, numer_delete_vals, denom_delete_vals)
-        return prop.est, prop.jknife_cov, prop.jknife_se
+        return prop.est, prop.jknife_cov, prop.jknife_se, prop.pseudovalues
 
     def _enrichment(self, M, M_tot, cat, tot):
         '''Compute proportion of SNPs per-category enrichment for h2 or gencov.'''
@@ -390,6 +390,20 @@ class Hsq(LD_Score_Regression):
             ratio_se = 'NA'
 
         return ratio, ratio_se
+
+    def _overlap_delete_enrichments(self, category_names, overlap_matrix, M_annot, M_tot, print_coefficients):
+        prop_M_overlap = M_annot / M_tot
+        overlap_matrix_prop = np.zeros([self.n_annot,self.n_annot])
+        for i in range(self.n_annot):
+            overlap_matrix_prop[i, :] = overlap_matrix[i, :] / M_annot
+        n_block = self.prop_pseudovalues.shape[0]
+        delete_prop_hsq_overlap = pd.DataFrame(
+            np.dot(overlap_matrix_prop, self.prop_pseudovalues.T) / prop_M_overlap.T, 
+            index=category_names, 
+            columns=np.arange(n_block)
+        )
+        delete_prop_hsq_overlap.index.name = "Category"
+        return delete_prop_hsq_overlap
 
     def _overlap_output(self, category_names, overlap_matrix, M_annot, M_tot, print_coefficients):
         '''LD Score regression summary for overlapping categories.'''

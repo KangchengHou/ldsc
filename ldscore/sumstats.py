@@ -372,6 +372,10 @@ def estimate_h2(args, log):
         df_results = hsqhat._overlap_output(ref_ld_cnames, overlap_matrix, M_annot, M_tot, args.print_coefficients)
         df_results.to_csv(args.out+'.results', sep="\t", index=False)
         log.log('Results printed to '+args.out+'.results')
+        if args.print_delete_vals:
+            df_delete_enrichments = hsqhat._overlap_delete_enrichments(ref_ld_cnames, overlap_matrix, M_annot, M_tot, args.print_coefficients)
+            df_delete_enrichments.to_csv(args.out+'.delete_enrichments', sep="\t", index=True)
+            log.log('Delete enrichments printed to '+args.out+'.delete_enrichments')
 
     return hsqhat
 
